@@ -3,185 +3,452 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Phone GPS Tracker</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0b1220">
+  <title>GPS Tracker | Live Tracking Dashboard</title>
+
+  <link rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      max-width: 600px;
-      margin: auto;
-      padding: 20px;
-      background: #f1f5f9;
+    :root {
+      color-scheme: dark;
+      --bg: #0b1220;
+      --panel: #121c2e;
+      --border: #25334a;
+      --text: #edf3ff;
+      --muted: #91a2bd;
+      --blue: #5b9cff;
+      --green: #35d49a;
+      --red: #ff6577;
     }
 
-    h2 {
-      text-align: center;
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .container {
+      max-width: 1050px;
+      margin: auto;
+      padding: 22px 16px 40px;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 24px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo {
+      display: grid;
+      place-items: center;
+      width: 46px;
+      height: 46px;
+      border-radius: 14px;
+      background: #19345a;
+      color: #8fc0ff;
+      font-size: 24px;
+    }
+
+    h1 { font-size: 22px; margin: 0; }
+    .subtitle { color: var(--muted); font-size: 13px; margin-top: 4px; }
+
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 12px;
+      border: 1px solid var(--border);
+      border-radius: 30px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #758198;
+    }
+
+    .status.active .dot { background: var(--green); }
+    .status.error .dot { background: var(--red); }
+
+    .hero {
+      background: linear-gradient(135deg, #152846, #121c2e 70%);
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      padding: 22px;
+      margin-bottom: 18px;
+    }
+
+    .eyebrow {
+      color: #8fc0ff;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+
+    .hero h2 { margin: 8px 0; font-size: 26px; }
+    .hero p { color: var(--muted); line-height: 1.6; margin-bottom: 20px; }
+
+    .actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+    button, .map-link {
+      border: 0;
+      border-radius: 12px;
+      padding: 13px 18px;
+      font: inherit;
+      font-weight: 650;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    #start {
+      color: #071629;
+      background: var(--green);
+    }
+
+    #stop {
+      color: var(--text);
+      background: #29364b;
+    }
+
+    button:disabled { opacity: .45; cursor: not-allowed; }
+
+    .notice {
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 14px;
+      overflow-wrap: anywhere;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      margin-bottom: 18px;
     }
 
     .card {
-      background: white;
+      min-width: 0;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 18px;
       padding: 18px;
-      margin: 12px 0;
-      border-radius: 12px;
-      box-shadow: 0 2px 8px #0001;
     }
 
-    button {
-      width: 100%;
-      padding: 12px;
-      margin: 7px 0;
-      font-size: 16px;
-      background: #1769e0;
-      color: white;
-      border: 0;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-
-    .stop {
-      background: #dc2626;
-    }
-
+    .label { color: var(--muted); font-size: 13px; }
     .value {
-      font-weight: bold;
-      font-size: 18px;
+      font-size: clamp(20px, 5vw, 28px);
+      font-weight: 750;
+      margin-top: 12px;
+      overflow-wrap: anywhere;
+      font-variant-numeric: tabular-nums;
     }
 
-    #status {
-      overflow-wrap: anywhere;
+    .unit { font-size: 13px; color: var(--muted); font-weight: 500; }
+    .card small { display: block; color: var(--muted); margin-top: 8px; }
+
+    #map {
+      width: 100%;
+      height: 320px;
+      border-radius: 14px;
+      background: #1a2739;
+      margin-top: 16px;
+      z-index: 1;
+    }
+
+    .section-title {
+      margin: 0;
+      font-size: 17px;
+    }
+
+    .map-link {
+      margin-top: 14px;
+      color: #a8ceff;
+      background: #1b3150;
+      font-size: 14px;
+    }
+
+    footer {
+      text-align: center;
+      color: var(--muted);
+      font-size: 12px;
+      padding-top: 24px;
+    }
+
+    @media (min-width: 700px) {
+      .grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .hero { padding: 30px; }
+      .hero h2 { font-size: 32px; }
     }
   </style>
 </head>
 
 <body>
+  <main class="container">
+    <header>
+      <div class="brand">
+        <div class="logo">⌖</div>
+        <div>
+          <h1>GPS Tracker</h1>
+          <div class="subtitle">Live location monitoring system</div>
+        </div>
+      </div>
 
-  <h2>Phone GPS Tracker</h2>
+      <div class="status" id="status">
+        <span class="dot"></span>
+        <span id="statusText">Not tracking</span>
+      </div>
+    </header>
 
-  <div class="card">
-    <button onclick="startGPS()">Start GPS</button>
-    <button class="stop" onclick="stopGPS()">Stop GPS</button>
-    <p id="status">Status: Ready</p>
-  </div>
+    <section class="hero">
+      <div class="eyebrow">GPS Control Centre</div>
+      <h2>Track your location live.</h2>
+      <p>
+        Start GPS tracking to view coordinates, speed and location
+        accuracy. Location updates are also sent to your existing
+        Cloudflare relay.
+      </p>
 
-  <div class="card">
-    <p>Latitude: <span class="value" id="lat">--</span></p>
-    <p>Longitude: <span class="value" id="lon">--</span></p>
-    <p>Speed: <span class="value" id="speed">--</span> km/h</p>
-    <p>Accuracy: <span class="value" id="accuracy">--</span> m</p>
+      <div class="actions">
+        <button id="start">▶ Start GPS</button>
+        <button id="stop" disabled>■ Stop GPS</button>
+      </div>
 
-    <a id="map" href="#" target="_blank" rel="noopener">
-      Open location in Google Maps
-    </a>
-  </div>
+      <div class="notice" id="message" role="status" aria-live="polite">
+        Press Start GPS and allow location access.
+      </div>
+    </section>
 
-<script>
-const WORKER_URL =
-  "https://phone-gps-relay.ayushkumar3602.workers.dev/gps";
+    <section class="grid">
+      <article class="card">
+        <div class="label">Latitude</div>
+        <div class="value" id="lat">--</div>
+        <small>GPS coordinates</small>
+      </article>
 
-let watchId = null;
-let lastSent = 0;
-let sending = false;
+      <article class="card">
+        <div class="label">Longitude</div>
+        <div class="value" id="lon">--</div>
+        <small>GPS coordinates</small>
+      </article>
 
-function setStatus(message) {
-  document.getElementById("status").textContent = message;
-}
+      <article class="card">
+        <div class="label">Current speed</div>
+        <div class="value"><span id="speed">--</span> <span class="unit">km/h</span></div>
+        <small>Reported by phone GPS</small>
+      </article>
 
-function startGPS() {
-  if (!navigator.geolocation) {
-    setStatus("GPS location is not supported by this browser.");
-    return;
-  }
+      <article class="card">
+        <div class="label">Accuracy</div>
+        <div class="value"><span id="accuracy">--</span> <span class="unit">m</span></div>
+        <small>Estimated position accuracy</small>
+      </article>
+    </section>
 
-  if (watchId !== null) {
-    navigator.geolocation.clearWatch(watchId);
-  }
+    <section class="card">
+      <h3 class="section-title">Live Location Map</h3>
+      <div class="subtitle">This map displays the phone's GPS position.</div>
+      <div id="map"></div>
+      <a id="googleMaps" class="map-link" href="#" target="_blank"
+         rel="noopener noreferrer" hidden>
+        Open location in Google Maps ↗
+      </a>
+      <div class="notice" id="updated">Last update: --</div>
+    </section>
 
-  setStatus("Requesting phone GPS permission...");
+    <footer>
+      GPS Tracker · Location access is controlled by the device owner.
+    </footer>
+  </main>
 
-  watchId = navigator.geolocation.watchPosition(
-    async function(position) {
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <script>
+    const WORKER_URL =
+      "https://phone-gps-relay.ayushkumar3602.workers.dev/gps";
+
+    const $ = id => document.getElementById(id);
+
+    let watchId = null;
+    let lastSentAt = 0;
+    let marker = null;
+    let accuracyCircle = null;
+    let map = null;
+
+    const startButton = $("start");
+    const stopButton = $("stop");
+
+    if (window.L) {
+      map = L.map("map").setView([20.5937, 78.9629], 5);
+
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+        attribution: "&copy; OpenStreetMap contributors"
+      }).addTo(map);
+    } else {
+      $("message").textContent =
+        "Map library could not load. GPS tracking may still work.";
+    }
+
+    function setStatus(state, text) {
+      $("status").className = "status " + state;
+      $("statusText").textContent = text;
+    }
+
+    function showMessage(text) {
+      $("message").textContent = text;
+    }
+
+    function updateMap(lat, lon, accuracy) {
+      if (!map) return;
+
+      const point = [lat, lon];
+
+      if (!marker) {
+        marker = L.marker(point).addTo(map)
+          .bindPopup("Current phone location");
+        map.setView(point, 16);
+      } else {
+        marker.setLatLng(point);
+      }
+
+      if (!accuracyCircle) {
+        accuracyCircle = L.circle(point, {
+          radius: accuracy,
+          color: "#5b9cff",
+          fillOpacity: 0.12
+        }).addTo(map);
+      } else {
+        accuracyCircle.setLatLng(point);
+        accuracyCircle.setRadius(accuracy);
+      }
+    }
+
+    async function sendToCloudflare(data) {
+      const response = await fetch(WORKER_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      });
+
+      if (!response.ok) {
+        throw new Error("Cloudflare returned HTTP " + response.status);
+      }
+
+      return true;
+    }
+
+    function onPosition(position) {
       const c = position.coords;
+      const lat = c.latitude;
+      const lon = c.longitude;
+      const speed = c.speed == null ? 0 : c.speed * 3.6;
+      const accuracy = c.accuracy;
 
-      const data = {
-        lat: Number(c.latitude.toFixed(6)),
-        lon: Number(c.longitude.toFixed(6)),
-        speed: Number(
-          ((c.speed == null ? 0 : c.speed * 3.6).toFixed(2))
-        ),
-        accuracy: Number(
-          (c.accuracy == null ? 0 : c.accuracy).toFixed(1)
-        )
+      $("lat").textContent = lat.toFixed(6);
+      $("lon").textContent = lon.toFixed(6);
+      $("speed").textContent = speed.toFixed(2);
+      $("accuracy").textContent = accuracy.toFixed(1);
+      $("updated").textContent =
+        "Last GPS update: " + new Date().toLocaleTimeString();
+
+      $("googleMaps").href =
+        "https://www.google.com/maps?q=" + lat + "," + lon;
+      $("googleMaps").hidden = false;
+
+      updateMap(lat, lon, accuracy);
+
+      const now = Date.now();
+      if (now - lastSentAt < 2000) return;
+
+      lastSentAt = now;
+
+      const payload = {
+        lat: lat,
+        lon: lon,
+        speed: Number(speed.toFixed(2)),
+        accuracy: Number(accuracy.toFixed(1))
       };
 
-      document.getElementById("lat").textContent =
-        data.lat.toFixed(6);
+      sendToCloudflare(payload)
+        .then(() => {
+          setStatus("active", "GPS active · Cloud connected");
+          showMessage("GPS location sent to Cloudflare successfully.");
+        })
+        .catch(error => {
+          setStatus("error", "Cloud connection error");
+          showMessage("GPS is working, but sending failed: " + error.message);
+        });
+    }
 
-      document.getElementById("lon").textContent =
-        data.lon.toFixed(6);
+    function onGPSerror(error) {
+      const messages = {
+        1: "Location permission denied. Allow location access in browser settings.",
+        2: "GPS position unavailable. Try outdoors with location enabled.",
+        3: "GPS request timed out. Waiting for another position..."
+      };
 
-      document.getElementById("speed").textContent =
-        data.speed.toFixed(2);
+      setStatus("error", "GPS issue");
+      showMessage(messages[error.code] || "Could not read GPS location.");
+    }
 
-      document.getElementById("accuracy").textContent =
-        data.accuracy.toFixed(1);
-
-      document.getElementById("map").href =
-        "https://www.google.com/maps?q=" +
-        data.lat + "," + data.lon;
-
-      if (Date.now() - lastSent < 2000 || sending) {
+    startButton.addEventListener("click", () => {
+      if (!navigator.geolocation) {
+        showMessage("This browser does not support GPS location.");
         return;
       }
 
-      sending = true;
-      setStatus("Sending GPS to Cloudflare...");
+      if (watchId !== null) return;
 
-      try {
-        const response = await fetch(WORKER_URL, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify(data)
-        });
+      startButton.disabled = true;
+      stopButton.disabled = false;
+      setStatus("active", "Getting GPS fix...");
+      showMessage("Requesting your phone's location. Please wait...");
 
-        const result = await response.json();
-
-        if (!response.ok) {
-          throw new Error(result.error || "HTTP " + response.status);
+      watchId = navigator.geolocation.watchPosition(
+        onPosition,
+        onGPSerror,
+        {
+          enableHighAccuracy: true,
+          maximumAge: 0,
+          timeout: 30000
         }
+      );
+    });
 
-        lastSent = Date.now();
-        setStatus("GPS sent to Cloudflare successfully.");
-      } catch (error) {
-        setStatus("Send failed: " + error.message);
-      } finally {
-        sending = false;
+    stopButton.addEventListener("click", () => {
+      if (watchId !== null) {
+        navigator.geolocation.clearWatch(watchId);
       }
-    },
 
-    function(error) {
-      setStatus("GPS error: " + error.message);
-    },
-
-    {
-      enableHighAccuracy: true,
-      maximumAge: 1000,
-      timeout: 20000
-    }
-  );
-}
-
-function stopGPS() {
-  if (watchId !== null) {
-    navigator.geolocation.clearWatch(watchId);
-    watchId = null;
-  }
-
-  setStatus("GPS stopped.");
-}
-</script>
-
+      watchId = null;
+      startButton.disabled = false;
+      stopButton.disabled = true;
+      setStatus("", "Not tracking");
+      showMessage("GPS tracking stopped.");
+    });
+  </script>
 </body>
 </html>
