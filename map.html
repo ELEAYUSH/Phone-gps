@@ -1,0 +1,144 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GPS Live Map</title>
+  <link rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #101827;
+      color: white;
+    }
+    header { padding: 18px; }
+    h2 { margin: 0 0 8px; }
+    #status { color: #9db4d5; font-size: 14px; }
+    .stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      padding: 0 14px 14px;
+    }
+    .card {
+      background: #1b2940;
+      border-radius: 12px;
+      padding: 14px;
+      overflow-wrap: anywhere;
+    }
+    .label { color: #a8b8d0; font-size: 13px; }
+    .value { font-size: 20px; margin-top: 8px; }
+    #map { height: 55vh; min-height: 300px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h2>GPS Live Map</h2>
+    <div id="status">Connecting to Blynk...</div>
+  </header>
+
+  <section class="stats">
+    <div class="card">
+      <div class="label">Latitude (V30)</div>
+      <div class="value" id="lat">--</div>
+    </div>
+    <div class="card">
+      <div class="label">Longitude (V31)</div>
+      <div class="value" id="lon">--</div>
+    </div>
+    <div class="card">
+      <div class="label">Speed (V32)</div>
+      <div class="value" id="speed">-- km/h</div>
+    </div>
+    <div class="card">
+      <div class="label">Last update</div>
+      <div class="value" id="updated">--</div>
+    </div>
+  </section>
+
+  <div id="map"></div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    // Paste a newly regenerated Blynk device token here for this test.
+    // WARNING: This makes the token visible to anyone who can view this page.
+    const BLYNK_TOKEN = "ZX64HjLviIP7ti6XY4y0Oq015StJtsex";
+    const API_URL = "https://blynk.cloud/external/api/get";
+
+    const map = L.map("map").setView([20.5937, 78.9629], 5);
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution: "&copy; OpenStreetMap contributors"
+    }).addTo(map);
+
+    let marker = null;
+    let firstFix = true;
+    let busy = false;
+
+    async function updateMap() {
+      if (busy) return;
+      busy = true;
+
+      try {
+        const url = API_URL +
+          "?token=" + encodeURIComponent(BLYNK_TOKEN) +
+          "&V30&V31&V32";
+
+        const response = await fetch(url, { cache: "no-store" });
+
+        if (!response.ok) {
+          throw new Error("Blynk HTTP " + response.status);
+        }
+
+        const data = await response.json();
+
+        // Blynk multiple-value responses commonly use lowercase pin keys.
+        const lat = Number(data.v30 ?? data.V30);
+        const lon = Number(data.v31 ?? data.V31);
+        const speed = Number(data.v32 ?? data.V32 ?? 0);
+
+        if (!Number.isFinite(lat) || !Number.isFinite(lon) ||
+            lat < -90 || lat > 90 || lon < -180 || lon > 180) {
+          throw new Error("Invalid coordinates returned by Blynk");
+        }
+
+        document.getElementById("lat").textContent = lat.toFixed(6);
+        document.getElementById("lon").textContent = lon.toFixed(6);
+        document.getElementById("speed").textContent =
+          (Number.isFinite(speed) ? speed.toFixed(2) : "--") + " km/h";
+        document.getElementById("updated").textContent =
+          new Date().toLocaleTimeString();
+        document.getElementById("status").textContent =
+          "Connected · Latest values read from Blynk";
+
+        const point = [lat, lon];
+
+        if (!marker) {
+          marker = L.marker(point).addTo(map)
+            .bindPopup("Blynk GPS location");
+        } else {
+          marker.setLatLng(point);
+        }
+
+        if (firstFix) {
+          map.setView(point, 16);
+          firstFix = false;
+        }
+      } catch (error) {
+        document.getElementById("status").textContent =
+          "Direct API request failed: " + error.message +
+          ". Browser CORS restrictions may block this method.";
+      } finally {
+        busy = false;
+      }
+    }
+
+    updateMap();
+    setInterval(updateMap, 3000);
+  </script>
+</body>
+</html>
