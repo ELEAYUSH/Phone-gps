@@ -2,143 +2,94 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Phone GPS Tracker</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Phone GPS Tracker</title>
 
-<style>
-* {
-  box-sizing: border-box;
-}
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 600px;
+      margin: auto;
+      padding: 20px;
+      background: #f1f5f9;
+    }
 
-body {
-  font-family: Arial, sans-serif;
-  max-width: 600px;
-  margin: auto;
-  padding: 20px;
-  background: #f1f5f9;
-  color: #172033;
-}
+    h2 {
+      text-align: center;
+    }
 
-h2 {
-  text-align: center;
-}
+    .card {
+      background: white;
+      padding: 18px;
+      margin: 12px 0;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px #0001;
+    }
 
-.card {
-  background: white;
-  padding: 18px;
-  margin: 12px 0;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px #00000012;
-}
+    button {
+      width: 100%;
+      padding: 12px;
+      margin: 7px 0;
+      font-size: 16px;
+      background: #1769e0;
+      color: white;
+      border: 0;
+      border-radius: 8px;
+      cursor: pointer;
+    }
 
-input, button {
-  width: 100%;
-  padding: 12px;
-  margin: 7px 0;
-  font-size: 16px;
-  border-radius: 8px;
-}
+    .stop {
+      background: #dc2626;
+    }
 
-input {
-  border: 1px solid #cbd5e1;
-}
+    .value {
+      font-weight: bold;
+      font-size: 18px;
+    }
 
-button {
-  background: #1769e0;
-  color: white;
-  border: 0;
-  cursor: pointer;
-}
-
-.stop {
-  background: #dc3545;
-}
-
-.value {
-  font-weight: bold;
-  font-size: 18px;
-  overflow-wrap: anywhere;
-}
-
-#status {
-  padding: 10px;
-  background: #eff6ff;
-  border-radius: 8px;
-  overflow-wrap: anywhere;
-}
-
-a {
-  overflow-wrap: anywhere;
-}
-</style>
+    #status {
+      overflow-wrap: anywhere;
+    }
+  </style>
 </head>
 
 <body>
 
-<h2>📍 Phone GPS Tracker</h2>
+  <h2>Phone GPS Tracker</h2>
 
-<div class="card">
-  <label for="token"><b>Blynk Device Auth Token</b></label>
+  <div class="card">
+    <button onclick="startGPS()">Start GPS</button>
+    <button class="stop" onclick="stopGPS()">Stop GPS</button>
+    <p id="status">Status: Ready</p>
+  </div>
 
-  <input
-    id="token"
-    type="password"
-    placeholder="Paste your device token"
-    autocomplete="off"
-  >
+  <div class="card">
+    <p>Latitude: <span class="value" id="lat">--</span></p>
+    <p>Longitude: <span class="value" id="lon">--</span></p>
+    <p>Speed: <span class="value" id="speed">--</span> km/h</p>
+    <p>Accuracy: <span class="value" id="accuracy">--</span> m</p>
 
-  <p>Latitude: V30</p>
-  <p>Longitude: V31</p>
-  <p>Speed: V32</p>
-  <p>Accuracy: V33</p>
-
-  <button onclick="startGPS()">Start GPS</button>
-  <button class="stop" onclick="stopGPS()">Stop GPS</button>
-
-  <p id="status">Status: Waiting to start</p>
-  <p>Last send attempt: <span id="lastSent">--</span></p>
-</div>
-
-<div class="card">
-  <p>Latitude: <span class="value" id="lat">--</span></p>
-  <p>Longitude: <span class="value" id="lon">--</span></p>
-  <p>Speed: <span class="value" id="speed">--</span> km/h</p>
-  <p>Accuracy: <span class="value" id="accuracy">--</span> m</p>
-
-  <a id="map" href="#" target="_blank" rel="noopener">
-    Open location in Google Maps
-  </a>
-</div>
+    <a id="map" href="#" target="_blank" rel="noopener">
+      Open location in Google Maps
+    </a>
+  </div>
 
 <script>
-let watchId = null;
-let sendTimer = null;
-let sending = false;
-let latestPosition = null;
-let lastSent = 0;
+const WORKER_URL =
+  "https://phone-gps-relay.ayushkumar3602.workers.dev/gps";
 
-const $ = id => document.getElementById(id);
+let watchId = null;
+let lastSent = 0;
+let sending = false;
 
 function setStatus(message) {
-  $("status").textContent = message;
+  document.getElementById("status").textContent = message;
 }
 
 function startGPS() {
-  const token = $("token").value.trim();
-
-  if (!token) {
-    setStatus("Please enter your Blynk device token.");
-    return;
-  }
-
-  if (!window.isSecureContext) {
-    setStatus("Please open your HTTPS GitHub Pages website.");
-    return;
-  }
-
   if (!navigator.geolocation) {
-    setStatus("GPS is not supported by this browser.");
+    setStatus("GPS location is not supported by this browser.");
     return;
   }
 
@@ -146,37 +97,68 @@ function startGPS() {
     navigator.geolocation.clearWatch(watchId);
   }
 
-  if (sendTimer !== null) {
-    clearInterval(sendTimer);
-  }
-
-  latestPosition = null;
-  lastSent = 0;
-  setStatus("Requesting phone GPS location...");
+  setStatus("Requesting phone GPS permission...");
 
   watchId = navigator.geolocation.watchPosition(
-    function(position) {
+    async function(position) {
       const c = position.coords;
 
-      latestPosition = {
-        lat: c.latitude,
-        lon: c.longitude,
-        speed: c.speed == null ? 0 : c.speed * 3.6,
-        accuracy: c.accuracy || 0
+      const data = {
+        lat: Number(c.latitude.toFixed(6)),
+        lon: Number(c.longitude.toFixed(6)),
+        speed: Number(
+          ((c.speed == null ? 0 : c.speed * 3.6).toFixed(2))
+        ),
+        accuracy: Number(
+          (c.accuracy == null ? 0 : c.accuracy).toFixed(1)
+        )
       };
 
-      $("lat").textContent = latestPosition.lat.toFixed(6);
-      $("lon").textContent = latestPosition.lon.toFixed(6);
-      $("speed").textContent = latestPosition.speed.toFixed(2);
-      $("accuracy").textContent = latestPosition.accuracy.toFixed(1);
+      document.getElementById("lat").textContent =
+        data.lat.toFixed(6);
 
-      $("map").href =
+      document.getElementById("lon").textContent =
+        data.lon.toFixed(6);
+
+      document.getElementById("speed").textContent =
+        data.speed.toFixed(2);
+
+      document.getElementById("accuracy").textContent =
+        data.accuracy.toFixed(1);
+
+      document.getElementById("map").href =
         "https://www.google.com/maps?q=" +
-        latestPosition.lat + "," + latestPosition.lon;
+        data.lat + "," + data.lon;
 
-      setStatus("Phone GPS received. Automatic updates enabled.");
+      if (Date.now() - lastSent < 2000 || sending) {
+        return;
+      }
 
-      sendToBlynk();
+      sending = true;
+      setStatus("Sending GPS to Cloudflare...");
+
+      try {
+        const response = await fetch(WORKER_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(data)
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.error || "HTTP " + response.status);
+        }
+
+        lastSent = Date.now();
+        setStatus("GPS sent to Cloudflare successfully.");
+      } catch (error) {
+        setStatus("Send failed: " + error.message);
+      } finally {
+        sending = false;
+      }
     },
 
     function(error) {
@@ -189,61 +171,6 @@ function startGPS() {
       timeout: 20000
     }
   );
-
-  // Attempt an update every 5 seconds while the page is running.
-  sendTimer = setInterval(function() {
-    if (latestPosition) {
-      sendToBlynk();
-    }
-  }, 5000);
-}
-
-async function sendToBlynk() {
-  if (!latestPosition || sending) return;
-
-  // Avoid duplicate requests within 5 seconds.
-  if (Date.now() - lastSent < 5000) return;
-
-  const token = $("token").value.trim();
-
-  if (!token) {
-    setStatus("Please enter your Blynk device token.");
-    return;
-  }
-
-  sending = true;
-  lastSent = Date.now();
-
-  const p = latestPosition;
-
-  const params = new URLSearchParams({
-    token: token,
-    V30: p.lat.toFixed(6),
-    V31: p.lon.toFixed(6),
-    V32: p.speed.toFixed(2),
-    V33: p.accuracy.toFixed(1)
-  });
-
-  $("lastSent").textContent = new Date().toLocaleTimeString();
-
-  try {
-    await fetch(
-      "https://blynk.cloud/external/api/batch/update?" +
-      params.toString(),
-      {
-        method: "GET",
-        mode: "no-cors"
-      }
-    );
-
-    setStatus(
-      "Update request sent. Check Blynk to confirm values."
-    );
-  } catch (error) {
-    setStatus("Network error: " + error.message);
-  } finally {
-    sending = false;
-  }
 }
 
 function stopGPS() {
@@ -252,12 +179,6 @@ function stopGPS() {
     watchId = null;
   }
 
-  if (sendTimer !== null) {
-    clearInterval(sendTimer);
-    sendTimer = null;
-  }
-
-  latestPosition = null;
   setStatus("GPS stopped.");
 }
 </script>
