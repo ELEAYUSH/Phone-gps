@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,9 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#0b1220">
   <title>GPS Tracker | Live Tracking Dashboard</title>
-
-  <link rel="stylesheet"
-        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 
   <style>
     :root {
@@ -18,7 +14,6 @@
       --border: #25334a;
       --text: #edf3ff;
       --muted: #91a2bd;
-      --blue: #5b9cff;
       --green: #35d49a;
       --red: #ff6577;
     }
@@ -109,18 +104,13 @@
 
     .actions { display: flex; gap: 10px; flex-wrap: wrap; }
 
-    button, .map-link {
+    button {
       border: 0;
       border-radius: 12px;
       padding: 13px 18px;
       font: inherit;
       font-weight: 650;
       cursor: pointer;
-      text-decoration: none;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
     }
 
     #start {
@@ -158,6 +148,7 @@
     }
 
     .label { color: var(--muted); font-size: 13px; }
+
     .value {
       font-size: clamp(20px, 5vw, 28px);
       font-weight: 750;
@@ -166,28 +157,16 @@
       font-variant-numeric: tabular-nums;
     }
 
-    .unit { font-size: 13px; color: var(--muted); font-weight: 500; }
-    .card small { display: block; color: var(--muted); margin-top: 8px; }
-
-    #map {
-      width: 100%;
-      height: 320px;
-      border-radius: 14px;
-      background: #1a2739;
-      margin-top: 16px;
-      z-index: 1;
+    .unit {
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: 500;
     }
 
-    .section-title {
-      margin: 0;
-      font-size: 17px;
-    }
-
-    .map-link {
-      margin-top: 14px;
-      color: #a8ceff;
-      background: #1b3150;
-      font-size: 14px;
+    .card small {
+      display: block;
+      color: var(--muted);
+      margin-top: 8px;
     }
 
     footer {
@@ -207,6 +186,7 @@
 
 <body>
   <main class="container">
+
     <header>
       <div class="brand">
         <div class="logo">⌖</div>
@@ -256,34 +236,28 @@
 
       <article class="card">
         <div class="label">Current speed</div>
-        <div class="value"><span id="speed">--</span> <span class="unit">km/h</span></div>
+        <div class="value">
+          <span id="speed">--</span>
+          <span class="unit">km/h</span>
+        </div>
         <small>Reported by phone GPS</small>
       </article>
 
       <article class="card">
         <div class="label">Accuracy</div>
-        <div class="value"><span id="accuracy">--</span> <span class="unit">m</span></div>
+        <div class="value">
+          <span id="accuracy">--</span>
+          <span class="unit">m</span>
+        </div>
         <small>Estimated position accuracy</small>
       </article>
-    </section>
-
-    <section class="card">
-      <h3 class="section-title">Live Location Map</h3>
-      <div class="subtitle">This map displays the phone's GPS position.</div>
-      <div id="map"></div>
-      <a id="googleMaps" class="map-link" href="#" target="_blank"
-         rel="noopener noreferrer" hidden>
-        Open location in Google Maps ↗
-      </a>
-      <div class="notice" id="updated">Last update: --</div>
     </section>
 
     <footer>
       GPS Tracker · Location access is controlled by the device owner.
     </footer>
-  </main>
 
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  </main>
 
   <script>
     const WORKER_URL =
@@ -293,24 +267,9 @@
 
     let watchId = null;
     let lastSentAt = 0;
-    let marker = null;
-    let accuracyCircle = null;
-    let map = null;
 
     const startButton = $("start");
     const stopButton = $("stop");
-
-    if (window.L) {
-      map = L.map("map").setView([20.5937, 78.9629], 5);
-
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        maxZoom: 19,
-        attribution: "&copy; OpenStreetMap contributors"
-      }).addTo(map);
-    } else {
-      $("message").textContent =
-        "Map library could not load. GPS tracking may still work.";
-    }
 
     function setStatus(state, text) {
       $("status").className = "status " + state;
@@ -319,31 +278,6 @@
 
     function showMessage(text) {
       $("message").textContent = text;
-    }
-
-    function updateMap(lat, lon, accuracy) {
-      if (!map) return;
-
-      const point = [lat, lon];
-
-      if (!marker) {
-        marker = L.marker(point).addTo(map)
-          .bindPopup("Current phone location");
-        map.setView(point, 16);
-      } else {
-        marker.setLatLng(point);
-      }
-
-      if (!accuracyCircle) {
-        accuracyCircle = L.circle(point, {
-          radius: accuracy,
-          color: "#5b9cff",
-          fillOpacity: 0.12
-        }).addTo(map);
-      } else {
-        accuracyCircle.setLatLng(point);
-        accuracyCircle.setRadius(accuracy);
-      }
     }
 
     async function sendToCloudflare(data) {
@@ -371,35 +305,33 @@
       $("lon").textContent = lon.toFixed(6);
       $("speed").textContent = speed.toFixed(2);
       $("accuracy").textContent = accuracy.toFixed(1);
-      $("updated").textContent =
-        "Last GPS update: " + new Date().toLocaleTimeString();
-
-      $("googleMaps").href =
-        "https://www.google.com/maps?q=" + lat + "," + lon;
-      $("googleMaps").hidden = false;
-
-      updateMap(lat, lon, accuracy);
 
       const now = Date.now();
-      if (now - lastSentAt < 2000) return;
 
+      if (now - lastSentAt < 2000) return;
       lastSentAt = now;
 
       const payload = {
         lat: lat,
         lon: lon,
         speed: Number(speed.toFixed(2)),
-        accuracy: Number(accuracy.toFixed(1))
+        accuracy: Number(accuracy.toFixed(1)),
+        time: now
       };
 
       sendToCloudflare(payload)
         .then(() => {
           setStatus("active", "GPS active · Cloud connected");
-          showMessage("GPS location sent to Cloudflare successfully.");
+          showMessage(
+            "GPS location sent to Cloudflare successfully. Last update: " +
+            new Date().toLocaleTimeString()
+          );
         })
         .catch(error => {
           setStatus("error", "Cloud connection error");
-          showMessage("GPS is working, but sending failed: " + error.message);
+          showMessage(
+            "GPS is working, but sending failed: " + error.message
+          );
         });
     }
 
@@ -444,8 +376,11 @@
       }
 
       watchId = null;
+      lastSentAt = 0;
+
       startButton.disabled = false;
       stopButton.disabled = true;
+
       setStatus("", "Not tracking");
       showMessage("GPS tracking stopped.");
     });
