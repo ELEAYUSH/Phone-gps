@@ -1,1 +1,175 @@
-# Phone-gps
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Phone GPS Tracker</title>
+<style>
+body {
+  font-family: Arial, sans-serif;
+  max-width: 600px;
+  margin: auto;
+  padding: 20px;
+  background: #f1f5f9;
+}
+.card {
+  background: white;
+  padding: 18px;
+  margin: 12px 0;
+  border-radius: 12px;
+}
+input, button {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 12px;
+  margin: 7px 0;
+  font-size: 16px;
+}
+button {
+  background: #1769e0;
+  color: white;
+  border: 0;
+  border-radius: 8px;
+}
+.value {
+  font-weight: bold;
+  font-size: 18px;
+}
+</style>
+</head>
+<body>
+
+<h2>📍 Phone GPS Tracker</h2>
+
+<div class="card">
+  <label>Blynk Device Auth Token</label>
+  <input id="token" type="password"
+         placeholder="Paste your device token">
+
+  <p>Latitude pin: V30</p>
+  <p>Longitude pin: V31</p>
+  <p>Speed pin: V32</p>
+  <p>Accuracy pin: V33</p>
+
+  <button onclick="startGPS()">Start GPS</button>
+  <button onclick="stopGPS()">Stop GPS</button>
+  <p id="status">Status: Waiting to start</p>
+</div>
+
+<div class="card">
+  <p>Latitude: <span class="value" id="lat">--</span></p>
+  <p>Longitude: <span class="value" id="lon">--</span></p>
+  <p>Speed: <span class="value" id="speed">--</span> km/h</p>
+  <p>Accuracy: <span class="value" id="accuracy">--</span> m</p>
+  <a id="map" href="#" target="_blank">Open location in Google Maps</a>
+</div>
+
+<script>
+let watchId = null;
+let lastSent = 0;
+
+function startGPS() {
+  if (!window.isSecureContext) {
+    document.getElementById("status").textContent =
+      "Open this page using its HTTPS GitHub Pages link.";
+    return;
+  }
+
+  if (!navigator.geolocation) {
+    document.getElementById("status").textContent =
+      "GPS location is not supported by this browser.";
+    return;
+  }
+
+  if (!document.getElementById("token").value.trim()) {
+    document.getElementById("status").textContent =
+      "Please enter your Blynk device token.";
+    return;
+  }
+
+  if (watchId !== null) {
+    navigator.geolocation.clearWatch(watchId);
+  }
+
+  document.getElementById("status").textContent =
+    "Requesting phone location permission...";
+
+  watchId = navigator.geolocation.watchPosition(
+    function(position) {
+      const c = position.coords;
+      const lat = c.latitude;
+      const lon = c.longitude;
+      const speed = c.speed == null ? 0 : c.speed * 3.6;
+      const accuracy = c.accuracy || 0;
+
+      document.getElementById("lat").textContent =
+        lat.toFixed(6);
+      document.getElementById("lon").textContent =
+        lon.toFixed(6);
+      document.getElementById("speed").textContent =
+        speed.toFixed(2);
+      document.getElementById("accuracy").textContent =
+        accuracy.toFixed(1);
+
+      document.getElementById("map").href =
+        "https://www.google.com/maps?q=" + lat + "," + lon;
+
+      document.getElementById("status").textContent =
+        "Location received. Sending to Blynk...";
+
+      if (Date.now() - lastSent >= 5000) {
+        lastSent = Date.now();
+        sendToBlynk(lat, lon, speed, accuracy);
+      }
+    },
+    function(error) {
+      document.getElementById("status").textContent =
+        "Location error: " + error.message;
+    },
+    {
+      enableHighAccuracy: true,
+      maximumAge: 1000,
+      timeout: 20000
+    }
+  );
+}
+
+async function sendToBlynk(lat, lon, speed, accuracy) {
+  const token = document.getElementById("token").value.trim();
+
+  const params = new URLSearchParams();
+  params.set("token", token);
+  params.set("V30", lat.toFixed(6));
+  params.set("V31", lon.toFixed(6));
+  params.set("V32", speed.toFixed(2));
+  params.set("V33", accuracy.toFixed(1));
+
+  try {
+    await fetch(
+      "https://blynk.cloud/external/api/update?" +
+      params.toString(),
+      { method: "GET", mode: "no-cors" }
+    );
+
+    document.getElementById("status").textContent =
+      "Location obtained; Blynk update request sent.";
+  } catch (error) {
+    document.getElementById("status").textContent =
+      "Network error. Check internet connection.";
+  }
+}
+
+function stopGPS() {
+  if (watchId !== null) {
+    navigator.geolocation.clearWatch(watchId);
+    watchId = null;
+  }
+  document.getElementById("status").textContent =
+    "GPS stopped.";
+}
+</script>
+
+</body>
+</html>
+
