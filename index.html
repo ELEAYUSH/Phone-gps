@@ -60,7 +60,12 @@
     }
 
     h1 { font-size: 22px; margin: 0; }
-    .subtitle { color: var(--muted); font-size: 13px; margin-top: 4px; }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 4px;
+    }
 
     .status {
       display: flex;
@@ -100,9 +105,18 @@
     }
 
     .hero h2 { margin: 8px 0; font-size: 26px; }
-    .hero p { color: var(--muted); line-height: 1.6; margin-bottom: 20px; }
 
-    .actions { display: flex; gap: 10px; flex-wrap: wrap; }
+    .hero p {
+      color: var(--muted);
+      line-height: 1.6;
+      margin-bottom: 20px;
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
 
     button {
       border: 0;
@@ -123,13 +137,17 @@
       background: #29364b;
     }
 
-    button:disabled { opacity: .45; cursor: not-allowed; }
+    button:disabled {
+      opacity: .45;
+      cursor: not-allowed;
+    }
 
     .notice {
       font-size: 13px;
       color: var(--muted);
       margin-top: 14px;
       overflow-wrap: anywhere;
+      line-height: 1.5;
     }
 
     .grid {
@@ -206,9 +224,8 @@
       <div class="eyebrow">GPS Control Centre</div>
       <h2>Track your location live.</h2>
       <p>
-        Start GPS tracking to view coordinates, speed and location
-        accuracy. Location updates are also sent to your existing
-        Cloudflare relay.
+        Start GPS tracking to view coordinates, speed and accuracy.
+        GPS readings are sent directly to your Blynk datastreams.
       </p>
 
       <div class="actions">
@@ -225,48 +242,52 @@
       <article class="card">
         <div class="label">Latitude</div>
         <div class="value" id="lat">--</div>
-        <small>GPS coordinates</small>
+        <small>Blynk V30</small>
       </article>
 
       <article class="card">
         <div class="label">Longitude</div>
         <div class="value" id="lon">--</div>
-        <small>GPS coordinates</small>
+        <small>Blynk V31</small>
       </article>
 
       <article class="card">
-        <div class="label">Current speed</div>
+        <div class="label">Current Speed</div>
         <div class="value">
           <span id="speed">--</span>
           <span class="unit">km/h</span>
         </div>
-        <small>Reported by phone GPS</small>
+        <small>Blynk V32</small>
       </article>
 
       <article class="card">
-        <div class="label">Accuracy</div>
+        <div class="label">GPS Accuracy</div>
         <div class="value">
           <span id="accuracy">--</span>
           <span class="unit">m</span>
         </div>
-        <small>Estimated position accuracy</small>
+        <small>Blynk V33</small>
       </article>
     </section>
 
     <footer>
       GPS Tracker · Location access is controlled by the device owner.
     </footer>
-
   </main>
 
   <script>
-    const WORKER_URL =
-      "https://phone-gps-relay.ayushkumar3602.workers.dev/gps";
+    // Temporary direct-to-Blynk test.
+    // A token embedded in a public page is visible to everyone.
+    const BLYNK_TOKEN = "PASTE_NEW_DEVICE_TOKEN_HERE";
+
+    const BLYNK_UPDATE_URL =
+      "https://blynk.cloud/external/api/update";
 
     const $ = id => document.getElementById(id);
 
     let watchId = null;
     let lastSentAt = 0;
+    let sending = false;
 
     const startButton = $("start");
     const stopButton = $("stop");
@@ -280,21 +301,31 @@
       $("message").textContent = text;
     }
 
-    async function sendToCloudflare(data) {
-      const response = await fetch(WORKER_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
-      });
+    async function sendToBlynk(data) {
+      const values = [
+        ["V30", data.lat],
+        ["V31", data.lon],
+        ["V32", data.speed],
+        ["V33", data.accuracy]
+      ];
 
-      if (!response.ok) {
-        throw new Error("Cloudflare returned HTTP " + response.status);
+      for (const [pin, value] of values) {
+        const url =
+          BLYNK_UPDATE_URL +
+          "?token=" + encodeURIComponent(BLYNK_TOKEN) +
+          "&" + pin + "=" + encodeURIComponent(value);
+
+        // The browser cannot read the response in no-cors mode.
+        // This sends the request but does not confirm success.
+        await fetch(url, {
+          method: "GET",
+          mode: "no-cors",
+          cache: "no-store"
+        });
       }
-
-      return true;
     }
 
-    function onPosition(position) {
+    async function onPosition(position) {
       const c = position.coords;
       const lat = c.latitude;
       const lon = c.longitude;
@@ -308,34 +339,47 @@
 
       const now = Date.now();
 
-      if (now - lastSentAt < 2000) return;
+      if (now - lastSentAt < 2000 || sending) return;
       lastSentAt = now;
 
       const payload = {
-        lat: lat,
-        lon: lon,
+        lat: Number(lat.toFixed(6)),
+        lon: Number(lon.toFixed(6)),
         speed: Number(speed.toFixed(2)),
-        accuracy: Number(accuracy.toFixed(1)),
-        time: now
+        accuracy: Number(accuracy.toFixed(1))
       };
 
-      sendToCloudflare(payload)
-        .then(() => {
-          setStatus("active", "GPS active · Cloud connected");
-          showMessage(
-            "GPS location sent to Cloudflare successfully. Last update: " +
-            new Date().toLocaleTimeString()
-          );
-        })
-        .catch(error => {
-          setStatus("error", "Cloud connection error");
-          showMessage(
-            "GPS is working, but sending failed: " + error.message
-          );
-        });
+      if (
+        BLYNK_TOKEN === "PASTE_NEW_DEVICE_TOKEN_HERE" ||
+        !BLYNK_TOKEN.trim()
+      ) {
+        setStatus("error", "Blynk token missing");
+        showMessage("Add your new Blynk device token in the code.");
+        return;
+      }
+
+      sending = true;
+
+      try {
+        await sendToBlynk(payload);
+
+        setStatus("active", "GPS active · Requests sent");
+        showMessage(
+          "Blynk update requests sent at " +
+          new Date().toLocaleTimeString() +
+          ". Verify the values in Blynk Console."
+        );
+      } catch (error) {
+        setStatus("error", "Send error");
+        showMessage(
+          "Could not send the update request: " + error.message
+        );
+      } finally {
+        sending = false;
+      }
     }
 
-    function onGPSerror(error) {
+    function onGPSError(error) {
       const messages = {
         1: "Location permission denied. Allow location access in browser settings.",
         2: "GPS position unavailable. Try outdoors with location enabled.",
@@ -356,12 +400,13 @@
 
       startButton.disabled = true;
       stopButton.disabled = false;
+
       setStatus("active", "Getting GPS fix...");
       showMessage("Requesting your phone's location. Please wait...");
 
       watchId = navigator.geolocation.watchPosition(
         onPosition,
-        onGPSerror,
+        onGPSError,
         {
           enableHighAccuracy: true,
           maximumAge: 0,
