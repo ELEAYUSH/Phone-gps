@@ -5,7 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#0b1220">
-  <title>GPS Tracker | Live Dashboard</title>
+  <title>GPS Tracker | Live Tracking Dashboard</title>
 
   <style>
     :root {
@@ -18,169 +18,77 @@
       --green: #35d49a;
       --red: #ff6577;
     }
-
     * { box-sizing: border-box; }
-
     body {
       margin: 0;
-      font-family: system-ui, sans-serif;
+      font-family: system-ui, -apple-system, sans-serif;
       background: var(--bg);
       color: var(--text);
     }
-
-    .container {
-      max-width: 1050px;
-      margin: auto;
-      padding: 22px 16px 40px;
-    }
-
-    header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 12px;
-      margin-bottom: 24px;
-    }
-
-    h1 { font-size: 22px; margin: 0; }
-
-    .subtitle, .label, small, .unit {
-      color: var(--muted);
-    }
-
-    .subtitle { font-size: 13px; margin-top: 4px; }
-
-    .status {
-      padding: 9px 12px;
-      border: 1px solid var(--border);
-      border-radius: 30px;
-      color: var(--muted);
-      font-size: 13px;
-    }
-
-    .hero {
-      background: linear-gradient(135deg, #152846, #121c2e);
-      border: 1px solid var(--border);
-      border-radius: 22px;
-      padding: 22px;
-      margin-bottom: 18px;
-    }
-
-    .hero h2 { margin: 8px 0; font-size: 26px; }
-
-    .hero p, .notice {
-      color: var(--muted);
-      line-height: 1.6;
-    }
-
-    .actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-    }
-
-    button, input {
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 12px;
-      font: inherit;
-    }
-
-    input {
-      width: 100%;
-      margin: 8px 0 14px;
-      background: var(--bg);
-      color: var(--text);
-    }
-
-    button {
-      cursor: pointer;
-      font-weight: 650;
-    }
-
-    #start { background: var(--green); color: #071629; }
-    #stop { background: #29364b; color: var(--text); }
-    button:disabled { opacity: .45; cursor: not-allowed; }
-
-    .notice { font-size: 13px; overflow-wrap: anywhere; }
-
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 14px;
-      margin-bottom: 18px;
-    }
-
-    .card {
-      min-width: 0;
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 18px;
-      padding: 18px;
-    }
-
-    .label { font-size: 13px; }
-
-    .value {
-      font-size: clamp(20px, 5vw, 28px);
-      font-weight: 750;
-      margin-top: 12px;
-      overflow-wrap: anywhere;
-      font-variant-numeric: tabular-nums;
-    }
-
-    .unit { font-size: 13px; font-weight: 500; }
-
-    small { display: block; margin-top: 8px; }
-
-    .normal { color: var(--green); }
-    .overspeed { color: var(--red); }
-
-    footer {
-      text-align: center;
-      color: var(--muted);
-      font-size: 12px;
-      padding-top: 24px;
-    }
-
-    @media (min-width: 700px) {
-      .grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-      .hero { padding: 30px; }
+    .container { max-width: 1050px; margin: auto; padding: 22px 16px 40px; }
+    header { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:24px; }
+    .brand { display:flex; align-items:center; gap:12px; }
+    .logo { display:grid; place-items:center; width:46px; height:46px; border-radius:14px; background:#19345a; color:#8fc0ff; font-size:24px; }
+    h1 { font-size:22px; margin:0; }
+    .subtitle,.label,.card small,.unit { color:var(--muted); }
+    .subtitle { font-size:13px; margin-top:4px; }
+    .status { display:flex; align-items:center; gap:8px; padding:9px 12px; border:1px solid var(--border); border-radius:30px; font-size:13px; color:var(--muted); }
+    .dot { width:9px; height:9px; border-radius:50%; background:#758198; }
+    .status.active .dot { background:var(--green); }
+    .status.error .dot { background:var(--red); }
+    .hero { background:linear-gradient(135deg,#152846,#121c2e 70%); border:1px solid var(--border); border-radius:22px; padding:22px; margin-bottom:18px; }
+    .eyebrow { color:#8fc0ff; font-size:12px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; }
+    .hero h2 { margin:8px 0; font-size:26px; }
+    .hero p { color:var(--muted); line-height:1.6; margin-bottom:20px; }
+    .actions { display:flex; gap:10px; flex-wrap:wrap; }
+    button { border:0; border-radius:12px; padding:13px 18px; font:inherit; font-weight:650; cursor:pointer; }
+    #start { color:#071629; background:var(--green); }
+    #stop { color:var(--text); background:#29364b; }
+    button:disabled { opacity:.45; cursor:not-allowed; }
+    .notice { font-size:13px; color:var(--muted); margin-top:14px; overflow-wrap:anywhere; line-height:1.5; }
+    .grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; margin-bottom:18px; }
+    .card { min-width:0; background:var(--panel); border:1px solid var(--border); border-radius:18px; padding:18px; }
+    .label { font-size:13px; }
+    .value { font-size:clamp(20px,5vw,28px); font-weight:750; margin-top:12px; overflow-wrap:anywhere; font-variant-numeric:tabular-nums; }
+    .unit { font-size:13px; font-weight:500; }
+    .card small { display:block; margin-top:8px; }
+    .normal { color:var(--green); }
+    .overspeed { color:var(--red); }
+    footer { text-align:center; color:var(--muted); font-size:12px; padding-top:24px; }
+    @media (min-width:700px) {
+      .grid { grid-template-columns:repeat(4,minmax(0,1fr)); }
+      .hero { padding:30px; }
+      .hero h2 { font-size:32px; }
     }
   </style>
 </head>
 
 <body>
 <main class="container">
-
   <header>
-    <div>
-      <h1>⌖ GPS Tracker</h1>
-      <div class="subtitle">Live location monitoring system</div>
+    <div class="brand">
+      <div class="logo">⌖</div>
+      <div>
+        <h1>GPS Tracker</h1>
+        <div class="subtitle">Live location monitoring system</div>
+      </div>
     </div>
-    <div class="status" id="status">Not tracking</div>
+    <div class="status" id="status">
+      <span class="dot"></span>
+      <span id="statusText">Not tracking</span>
+    </div>
   </header>
 
   <section class="hero">
+    <div class="eyebrow">GPS Control Centre</div>
     <h2>Track your location live.</h2>
-    <p>
-      GPS updates, total distance and overspeed status.
-      Test speed limit: 5 km/h.
-    </p>
-
-    <label for="token">Blynk Device Auth Token</label>
-    <input id="token" type="password"
-           autocomplete="off"
-           placeholder="ZX64HjLviIP7ti6XY4y0Oq015StJtsex">
-
+    <p>Live coordinates, speed, total distance and overspeed status.</p>
     <div class="actions">
       <button id="start">▶ Start GPS</button>
       <button id="stop" disabled>■ Stop GPS</button>
     </div>
-
-    <div class="notice" id="message" role="status">
-      Enter your token and press Start GPS.
+    <div class="notice" id="message" role="status" aria-live="polite">
+      Press Start GPS and allow location access.
     </div>
   </section>
 
@@ -190,37 +98,26 @@
       <div class="value" id="lat">--</div>
       <small>Blynk V30</small>
     </article>
-
     <article class="card">
       <div class="label">Longitude</div>
       <div class="value" id="lon">--</div>
       <small>Blynk V31</small>
     </article>
-
     <article class="card">
       <div class="label">Current Speed</div>
-      <div class="value"><span id="speed">--</span>
-        <span class="unit">km/h</span>
-      </div>
+      <div class="value"><span id="speed">--</span> <span class="unit">km/h</span></div>
       <small>Blynk V32</small>
     </article>
-
     <article class="card">
       <div class="label">GPS Accuracy</div>
-      <div class="value"><span id="accuracy">--</span>
-        <span class="unit">m</span>
-      </div>
+      <div class="value"><span id="accuracy">--</span> <span class="unit">m</span></div>
       <small>Blynk V33</small>
     </article>
-
     <article class="card">
       <div class="label">Total Distance Covered</div>
-      <div class="value"><span id="distance">0.000</span>
-        <span class="unit">km</span>
-      </div>
-      <small>Blynk V34 · Saved on this browser</small>
+      <div class="value"><span id="distance">0.000</span> <span class="unit">km</span></div>
+      <small>Blynk V34</small>
     </article>
-
     <article class="card">
       <div class="label">Speed Status</div>
       <div class="value normal" id="speedStatus">NORMAL</div>
@@ -228,121 +125,94 @@
     </article>
   </section>
 
-  <footer>
-    GPS Tracker · Allow location permission to begin.
-  </footer>
+  <footer>GPS Tracker · Location access is controlled by the device owner.</footer>
 </main>
 
 <script>
-  const BLYNK_UPDATE_URL =
-    "https://blynk.cloud/external/api/update";
-
+  // Replace this placeholder locally with your regenerated Blynk token.
+  const BLYNK_TOKEN = "ZX64HjLviIP7ti6XY4y0Oq015StJtsex";
+  const BLYNK_UPDATE_URL = "https://blynk.cloud/external/api/update";
   const SPEED_LIMIT = 5;
   const STORAGE_KEY = "gpsTrackerLifetimeDistanceKm";
 
   const $ = id => document.getElementById(id);
-
   let watchId = null;
   let lastSentAt = 0;
   let sending = false;
-
-  // Preserve total distance when this page is reopened.
-  let totalDistanceKm = Number(
-    localStorage.getItem(STORAGE_KEY) || 0
-  );
-
-  if (!Number.isFinite(totalDistanceKm) || totalDistanceKm < 0) {
-    totalDistanceKm = 0;
-  }
-
-  $("distance").textContent = totalDistanceKm.toFixed(3);
-
-  // Previous point is reset at each new tracking session.
-  // The saved lifetime total itself is not reset.
   let previousPoint = null;
 
-  function setMessage(text) {
+  let totalDistanceKm = Number(localStorage.getItem(STORAGE_KEY) || 0);
+  if (!Number.isFinite(totalDistanceKm) || totalDistanceKm < 0) totalDistanceKm = 0;
+  $("distance").textContent = totalDistanceKm.toFixed(3);
+
+  function setStatus(state, text) {
+    $("status").className = "status " + state;
+    $("statusText").textContent = text;
+  }
+
+  function showMessage(text) {
     $("message").textContent = text;
   }
 
   function haversineKm(lat1, lon1, lat2, lon2) {
     const rad = degrees => degrees * Math.PI / 180;
     const R = 6371;
-
     const dLat = rad(lat2 - lat1);
     const dLon = rad(lon2 - lon1);
     const p1 = rad(lat1);
     const p2 = rad(lat2);
 
-    const a =
-      Math.sin(dLat / 2) ** 2 +
-      Math.cos(p1) * Math.cos(p2) *
-      Math.sin(dLon / 2) ** 2;
+    const a = Math.sin(dLat / 2) ** 2 +
+      Math.cos(p1) * Math.cos(p2) * Math.sin(dLon / 2) ** 2;
 
-    const safeA = Math.min(1, Math.max(0, a));
-
-    return 2 * R * Math.asin(Math.sqrt(safeA));
+    return 2 * R * Math.asin(Math.sqrt(Math.min(1, Math.max(0, a))));
   }
 
   function updateDistance(lat, lon, accuracy) {
-    // Avoid adding distance from very inaccurate fixes.
+    // Skip inaccurate fixes rather than adding unreliable distance.
     if (!Number.isFinite(accuracy) || accuracy > 30) {
       previousPoint = null;
       return;
     }
 
-    const currentPoint = { lat, lon };
+    const current = { lat, lon };
 
     if (previousPoint !== null) {
-      const segmentKm = haversineKm(
-        previousPoint.lat,
-        previousPoint.lon,
-        currentPoint.lat,
-        currentPoint.lon
+      const segment = haversineKm(
+        previousPoint.lat, previousPoint.lon, lat, lon
       );
 
-      // Ignore tiny GPS jitter and implausible jumps.
-      // These are prototype filtering thresholds.
-      if (segmentKm >= 0.003 && segmentKm <= 0.2) {
-        totalDistanceKm += segmentKm;
+      // Prototype noise filter: ignore tiny jitter and large jumps.
+      if (segment >= 0.003 && segment <= 0.2) {
+        totalDistanceKm += segment;
+        $("distance").textContent = totalDistanceKm.toFixed(3);
 
         try {
-          localStorage.setItem(
-            STORAGE_KEY,
-            String(totalDistanceKm)
-          );
+          localStorage.setItem(STORAGE_KEY, String(totalDistanceKm));
         } catch (error) {
-          setMessage(
-            "Warning: browser could not save distance locally."
-          );
+          showMessage("Warning: browser could not save distance locally.");
         }
-
-        $("distance").textContent =
-          totalDistanceKm.toFixed(3);
       }
     }
 
-    previousPoint = currentPoint;
+    previousPoint = current;
   }
 
-  async function updateBlynk(pin, value, token) {
+  async function updatePin(pin, value) {
     const params = new URLSearchParams({
-      token: token,
+      token: BLYNK_TOKEN,
       [pin]: String(value)
     });
 
-    await fetch(
-      BLYNK_UPDATE_URL + "?" + params.toString(),
-      {
-        method: "GET",
-        mode: "no-cors",
-        cache: "no-store"
-      }
-    );
+    await fetch(BLYNK_UPDATE_URL + "?" + params.toString(), {
+      method: "GET",
+      mode: "no-cors",
+      cache: "no-store"
+    });
   }
 
-  async function sendToBlynk(data, token) {
-    const isOverspeed = data.speed > SPEED_LIMIT;
+  async function sendToBlynk(data) {
+    const overspeed = data.speed > SPEED_LIMIT;
 
     const values = [
       ["V30", data.lat],
@@ -350,19 +220,18 @@
       ["V32", data.speed],
       ["V33", data.accuracy],
       ["V34", Number(totalDistanceKm.toFixed(3))],
-      ["V36", isOverspeed ? "OVERSPEED" : "NORMAL"],
-      ["V37", isOverspeed ? 0 : 1],
-      ["V38", isOverspeed ? 1 : 0]
+      ["V36", overspeed ? "OVERSPEED" : "NORMAL"],
+      ["V37", overspeed ? 0 : 1],
+      ["V38", overspeed ? 1 : 0]
     ];
 
     for (const [pin, value] of values) {
-      await updateBlynk(pin, value, token);
+      await updatePin(pin, value);
     }
   }
 
   async function onPosition(position) {
     const c = position.coords;
-
     const lat = c.latitude;
     const lon = c.longitude;
     const speed = c.speed == null ? 0 : c.speed * 3.6;
@@ -373,30 +242,23 @@
     $("speed").textContent = speed.toFixed(2);
     $("accuracy").textContent = accuracy.toFixed(1);
 
-    const isOverspeed = speed > SPEED_LIMIT;
+    const overspeed = speed > SPEED_LIMIT;
+    $("speedStatus").textContent = overspeed ? "OVERSPEED" : "NORMAL";
+    $("speedStatus").className = "value " + (overspeed ? "overspeed" : "normal");
 
-    $("speedStatus").textContent =
-      isOverspeed ? "OVERSPEED" : "NORMAL";
-
-    $("speedStatus").className =
-      "value " + (isOverspeed ? "overspeed" : "normal");
-
-    // Calculate distance for every accepted GPS position,
-    // not only when sending data to Blynk.
+    // Calculate each GPS segment, not just every Blynk send.
     updateDistance(lat, lon, accuracy);
 
-    const now = Date.now();
+    if (Date.now() - lastSentAt < 2000 || sending) return;
 
-    if (now - lastSentAt < 2000 || sending) return;
-
-    const token = $("token").value.trim();
-
-    if (!token) {
-      setMessage("Enter your Blynk device token first.");
+    if (!BLYNK_TOKEN.trim() ||
+        BLYNK_TOKEN === "PASTE_YOUR_REGENERATED_TOKEN_HERE") {
+      setStatus("error", "Blynk token missing");
+      showMessage("Add your regenerated Blynk token in the code.");
       return;
     }
 
-    lastSentAt = now;
+    lastSentAt = Date.now();
     sending = true;
 
     try {
@@ -405,18 +267,13 @@
         lon: Number(lon.toFixed(6)),
         speed: Number(speed.toFixed(2)),
         accuracy: Number(accuracy.toFixed(1))
-      }, token);
+      });
 
-      $("status").textContent = "GPS active · Requests sent";
-
-      setMessage(
-        "Blynk update requests sent at " +
-        new Date().toLocaleTimeString() +
-        ". Verify datastreams in Blynk."
-      );
+      setStatus("active", "GPS active · Requests sent");
+      showMessage("Blynk update requests sent. Verify values in Blynk Console.");
     } catch (error) {
-      $("status").textContent = "Network issue";
-      setMessage("Request failed: " + error.message);
+      setStatus("error", "Send error");
+      showMessage("Could not send request: " + error.message);
     } finally {
       sending = false;
     }
@@ -424,60 +281,43 @@
 
   function onGPSError(error) {
     const messages = {
-      1: "Location permission denied. Allow browser location access.",
+      1: "Location permission denied. Allow location access in browser settings.",
       2: "GPS unavailable. Try outdoors with location enabled.",
       3: "GPS timed out. Waiting for another position."
     };
-
-    $("status").textContent = "GPS issue";
-    setMessage(messages[error.code] || "Could not read GPS location.");
+    setStatus("error", "GPS issue");
+    showMessage(messages[error.code] || "Could not read GPS location.");
   }
 
   $("start").addEventListener("click", () => {
     if (!navigator.geolocation) {
-      setMessage("This browser does not support GPS.");
+      showMessage("This browser does not support GPS location.");
       return;
     }
-
     if (watchId !== null) return;
-
-    if (!$("token").value.trim()) {
-      setMessage("Enter your Blynk device token first.");
-      $("token").focus();
-      return;
-    }
 
     previousPoint = null;
     lastSentAt = 0;
-
     $("start").disabled = true;
     $("stop").disabled = false;
-    $("status").textContent = "Getting GPS fix...";
-    setMessage("Allow location access and wait for a GPS fix.");
+    setStatus("active", "Getting GPS fix...");
+    showMessage("Requesting your phone's location. Please wait...");
 
     watchId = navigator.geolocation.watchPosition(
       onPosition,
       onGPSError,
-      {
-        enableHighAccuracy: true,
-        maximumAge: 0,
-        timeout: 30000
-      }
+      { enableHighAccuracy: true, maximumAge: 0, timeout: 30000 }
     );
   });
 
   $("stop").addEventListener("click", () => {
-    if (watchId !== null) {
-      navigator.geolocation.clearWatch(watchId);
-    }
-
+    if (watchId !== null) navigator.geolocation.clearWatch(watchId);
     watchId = null;
     previousPoint = null;
-
     $("start").disabled = false;
     $("stop").disabled = true;
-    $("status").textContent = "Not tracking";
-    setMessage("GPS tracking stopped. Saved total distance is preserved.");
+    setStatus("", "Not tracking");
+    showMessage("GPS tracking stopped. Saved distance is preserved.");
   });
 </script>
 </body>
